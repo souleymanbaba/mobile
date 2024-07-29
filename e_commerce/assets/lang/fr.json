@@ -1,0 +1,16 @@
+{
+  "welcome": "Bienvenue",
+  "login": "Connexion",
+  "signup": "Inscription",
+  "cart": "Panier",
+  "orders": "Commandes",
+  "wishlist": "Liste de souhaits",
+  "product_added_to_cart": "Produit ajouté au panier",
+  "product_removed_from_wishlist": "Produit retiré de la liste de souhaits",
+  "no_products_available": "Aucun produit disponible",
+  "loading": "Chargement en cours",
+  "amount": "Montant",
+  "date": "Date",
+  "status": "Statut",
+  "actions": "Actions"
+}

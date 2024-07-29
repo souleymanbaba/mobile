@@ -1,0 +1,16 @@
+{
+  "welcome": "أهلا بك",
+  "login": "تسجيل الدخول",
+  "signup": "اشتراك",
+  "cart": "عربة التسوق",
+  "orders": "الطلبات",
+  "wishlist": "قائمة الرغبات",
+  "product_added_to_cart": "تمت إضافة المنتج إلى عربة التسوق",
+  "product_removed_from_wishlist": "تمت إزالة المنتج من قائمة الرغبات",
+  "no_products_available": "لا توجد منتجات متاحة",
+  "loading": "جاري التحميل",
+  "amount": "المبلغ",
+  "date": "التاريخ",
+  "status": "الحالة",
+  "actions": "الإجراءات"
+}

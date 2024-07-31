@@ -87,7 +87,7 @@ class _WishlistPageState extends State<WishlistPage> {
     } catch (error) {
       setState(() {
         successMessage = null;
-        errorMessage = 'Erreur lors de l\'ajout du produit au panier';
+        errorMessage = 'Le produit est déjà dans votre panier.';
       });
       print('Error adding item to cart: $error');
     }

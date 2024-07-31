@@ -286,11 +286,40 @@ class _ProductListState extends State<ProductList> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Produit ajouté aux favoris!')),
         );
-        Navigator.pushNamed(context, '/wishlist');
       } else {
         print('Failed to add to favorites: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur lors de l\'ajout aux favoris.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeFromFavorites(int productId) async {
+    final user = await _storageService.getUser();
+    if (user == null) {
+      Navigator.pushNamed(context, '/login');
+    } else {
+      final userId = user['userId'];
+      final response = await http.delete(
+        Uri.parse('http://192.168.100.165:8080/api/customer/removedd/$productId/$userId'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          wishlistItems.remove(productId); // Supprimer l'élément des favoris
+        });
+        await _loadWishlistItems(); // Recharger toutes les données après la suppression des favoris
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Produit supprimé des favoris!')),
+        );
+      } else {
+        print('Failed to remove from favorites: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la suppression des favoris.')),
         );
       }
     }
@@ -528,7 +557,13 @@ class _ProductListState extends State<ProductList> {
                                     icon: Icon(
                                       isInWishlist ? Icons.favorite : Icons.favorite_border,
                                     ),
-                                    onPressed: () => _addToFavorites(product.id!),
+                                    onPressed: () {
+                                      if (isInWishlist) {
+                                        _removeFromFavorites(product.id!);
+                                      } else {
+                                        _addToFavorites(product.id!);
+                                      }
+                                    },
                                   ),
                                 ],
                               ),
@@ -550,8 +585,6 @@ class _ProductListState extends State<ProductList> {
                                 children: [
                                   IconButton(
                                     icon: Icon(Icons.remove),
-
-
                                     onPressed: () => _decreaseQuantity(product.id!),
                                   ),
                                   Text('${cartItems[product.id]}'),

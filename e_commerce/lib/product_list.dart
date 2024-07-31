@@ -186,7 +186,7 @@ class _ProductListState extends State<ProductList> {
           'userId': userId,
         }),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         setState(() {
           cartItems[productId] = (cartItems[productId] ?? 0) + 1;
         });
@@ -212,7 +212,7 @@ class _ProductListState extends State<ProductList> {
           'userId': userId,
         }),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         setState(() {
           final currentQuantity = cartItems[productId] ?? 0;
           if (currentQuantity > 0) {

@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Product App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignupPage(),
         '/cart': (context) => CartPage(),
-        '/orders': (context) => OrdersPage(), // Ajoutez cette ligne
+        '/orders': (context) => OrdersPage(), 
         '/wishlist': (context) => WishlistPage(),
       },
     );

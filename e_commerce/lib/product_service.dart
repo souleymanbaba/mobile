@@ -27,6 +27,7 @@ class ProductService {
   Future<List<Product>> fetchWishlist(int userId) async {
     final response = await http.get(Uri.parse('$wishlistUrl/$userId'));
     if (response.statusCode == 200) {
+
       List<dynamic> body = jsonDecode(response.body);
       return body.map((dynamic item) => Product.fromJson(item)).toList();
     } else {

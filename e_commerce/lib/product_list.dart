@@ -325,6 +325,34 @@ class _ProductListState extends State<ProductList> {
     }
   }
 
+  Future<void> _removeFromCarttt(int productId) async {
+    final user = await _storageService.getUser();
+    if (user == null) {
+      Navigator.pushNamed(context, '/login');
+    } else {
+      final userId = user['userId'];
+      final response = await http.delete(
+        Uri.parse('http://192.168.100.165:8080/api/customer/removee/$productId/$userId'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        await _loadCartItems(); // Recharger toutes les données après la suppression des favoris
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Produit supprimé des Cart!')),
+        );
+      } else {
+        print('Failed to remove from favorites: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la suppression des favoris.')),
+        );
+      }
+    }
+  }
+
   Future<void> _sendProductToEndpoint(int productId) async {
     final user = await _storageService.getUser();
     if (user == null) {
@@ -585,7 +613,14 @@ class _ProductListState extends State<ProductList> {
                                 children: [
                                   IconButton(
                                     icon: Icon(Icons.remove),
-                                    onPressed: () => _decreaseQuantity(product.id!),
+                                    onPressed: () {
+                                      if (cartItems[product.id]==1) {
+                                        _removeFromCarttt(product.id!);
+                                        print("ce bon _____________________________________________________________________________________________________________________");
+                                      } else {
+                                        _decreaseQuantity(product.id!);
+                                      }
+                                    },
                                   ),
                                   Text('${cartItems[product.id]}'),
                                   IconButton(

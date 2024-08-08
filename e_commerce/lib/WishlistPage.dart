@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'product_model.dart';
 import 'product_service.dart';
 import 'storage_service.dart';
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'product_model.dart';
-import 'product_service.dart';
-import 'storage_service.dart';
+import 'language_provider.dart';
+import 'traduction.dart';
 
 class WishlistPage extends StatefulWidget {
   @override
@@ -56,20 +53,16 @@ class _WishlistPageState extends State<WishlistPage> {
   Future<void> _removeFromWishlist(int? productId) async {
     if (productId == null) return;
     try {
-      print("------------------------------------------------------------------------------------------------------------------");
-
-      print(productId);
-      print("------------------------------------------------------------------------------------------------------------------");
       await ProductService().removeFromWishlist(productId);
       setState(() {
         wishlist.removeWhere((item) => item.productId == productId);
-        successMessage = 'Produit retiré de la wishlist';
+        successMessage = translate('success_remove_wishlist', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage);
         errorMessage = null;
       });
     } catch (error) {
       setState(() {
         successMessage = null;
-        errorMessage = 'Erreur lors de la suppression du produit';
+        errorMessage = translate('error_remove_wishlist', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage);
       });
       print('Error removing item from wishlist: $error');
     }
@@ -78,16 +71,15 @@ class _WishlistPageState extends State<WishlistPage> {
   Future<void> _addToCart(int? productId) async {
     if (productId == null || userId == null) return;
     try {
-      print(userId);
       await ProductService().addToCart(userId!, productId);
       setState(() {
-        successMessage = 'Produit ajouté au panier';
+        successMessage = translate('success_add_cart', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage);
         errorMessage = null;
       });
     } catch (error) {
       setState(() {
         successMessage = null;
-        errorMessage = 'Le produit est déjà dans votre panier.';
+        errorMessage = translate('error_add_cart', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage);
       });
       print('Error adding item to cart: $error');
     }
@@ -95,70 +87,82 @@ class _WishlistPageState extends State<WishlistPage> {
 
   @override
   Widget build(BuildContext context) {
+    String selectedLanguage = Provider.of<LanguageProvider>(context).selectedLanguage;
+    TextDirection textDirection = (selectedLanguage == 'ar') ? TextDirection.rtl : TextDirection.ltr;
+
     if (loading) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Wishlist')),
-        body: Center(child: CircularProgressIndicator()),
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          appBar: AppBar(title: Text(translate('wishlist', selectedLanguage))),
+          body: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
     if (wishlist.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Wishlist')),
-        body: Center(child: Text('Votre wishlist est vide.')),
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          appBar: AppBar(title: Text(translate('wishlist', selectedLanguage))),
+          body: Center(child: Text(translate('empty_wishlist', selectedLanguage))),
+        ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Wishlist')),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            if (successMessage != null)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  successMessage!,
-                  style: TextStyle(color: Colors.green),
-                ),
-              ),
-            if (errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  errorMessage!,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: wishlist.length,
-              itemBuilder: (context, index) {
-                final item = wishlist[index];
-                return ListTile(
-                  leading: item.returnedImg != null && item.returnedImg!.isNotEmpty
-                      ? Image.memory(item.returnedImg!)
-                      : Icon(Icons.image_not_supported),
-                  title: Text(item.productName ?? ''),
-                  subtitle: Text('Price: ${item.price?.toStringAsFixed(2) ?? ''} \$'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.add_shopping_cart),
-                        onPressed: () => _addToCart(item.productId),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () => _removeFromWishlist(item.id),
-                      ),
-                    ],
+    return Directionality(
+      textDirection: textDirection,
+      child: Scaffold(
+        appBar: AppBar(title: Text(translate('wishlist', selectedLanguage))),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              if (successMessage != null)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    successMessage!,
+                    style: TextStyle(color: Colors.green),
                   ),
-                );
-              },
-            ),
-          ],
+                ),
+              if (errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    errorMessage!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: wishlist.length,
+                itemBuilder: (context, index) {
+                  final item = wishlist[index];
+                  return ListTile(
+                    leading: item.returnedImg != null && item.returnedImg!.isNotEmpty
+                        ? Image.memory(item.returnedImg!)
+                        : Icon(Icons.image_not_supported),
+                    title: Text(item.productName ?? ''),
+                    subtitle: Text('${translate('price', selectedLanguage)}: ${item.price?.toStringAsFixed(2) ?? ''} \$'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.add_shopping_cart),
+                          onPressed: () => _addToCart(item.productId),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () => _removeFromWishlist(item.productId),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

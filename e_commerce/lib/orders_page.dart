@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'storage_service.dart';
+import 'language_provider.dart'; // Importer le fournisseur de langue
+import 'traduction.dart'; // Importer le fichier de traductions
+import 'package:provider/provider.dart';
 
 class OrdersPage extends StatefulWidget {
   @override
@@ -49,10 +52,6 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 
   Future<void> _fetchCartItems(int userId, int orderId) async {
-    print("----------------------------------------");
-    print(userId);
-    print(orderId);
-    print("----------------------------------------");
     try {
       final uri = Uri.http(
           '192.168.100.165:8080',
@@ -82,36 +81,40 @@ class _OrdersPageState extends State<OrdersPage> {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Text('Cart Items', style: TextStyle(fontWeight: FontWeight.bold)),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: cartItems.length,
-                  itemBuilder: (context, index) {
-                    final item = cartItems[index];
-                    final imageBytes = base64Decode(item['returnedImg']);
-                    return ListTile(
-                      title: Text(item['productNane'] ?? 'N/A'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Quantity: ${item['quantity'] ?? 'N/A'}'),
-                          if (item['returnedImg'] != null)
-                            Container(
-                              width: 100,
-                              height: 100,
-                              child: Image.memory(imageBytes, fit: BoxFit.cover),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
+        String selectedLanguage = Provider.of<LanguageProvider>(context).selectedLanguage;
+        return Directionality(
+          textDirection: selectedLanguage == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+          child: Container(
+            padding: EdgeInsets.all(10),
+            child: Column(
+              children: [
+                Text(translate('cart_items', selectedLanguage), style: TextStyle(fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: cartItems.length,
+                    itemBuilder: (context, index) {
+                      final item = cartItems[index];
+                      final imageBytes = base64Decode(item['returnedImg']);
+                      return ListTile(
+                        title: Text(item['productNane'] ?? 'N/A'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${translate('quantity', selectedLanguage)}: ${item['quantity'] ?? 'N/A'}'),
+                            if (item['returnedImg'] != null)
+                              Container(
+                                width: 100,
+                                height: 100,
+                                child: Image.memory(imageBytes, fit: BoxFit.cover),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -126,17 +129,26 @@ class _OrdersPageState extends State<OrdersPage> {
 
   @override
   Widget build(BuildContext context) {
+    String selectedLanguage = Provider.of<LanguageProvider>(context).selectedLanguage;
+    TextDirection textDirection = (selectedLanguage == 'ar') ? TextDirection.rtl : TextDirection.ltr;
+
     if (loading) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Commandes')),
-        body: Center(child: CircularProgressIndicator()),
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          appBar: AppBar(title: Text(translate('orders', selectedLanguage))),
+          body: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
     if (orders.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Commandes')),
-        body: Center(child: Text('Aucune commande disponible.')),
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          appBar: AppBar(title: Text(translate('orders', selectedLanguage))),
+          body: Center(child: Text(translate('no_orders', selectedLanguage))),
+        ),
       );
     }
 
@@ -147,46 +159,49 @@ class _OrdersPageState extends State<OrdersPage> {
       indexOfLastOrder > orders.length ? orders.length : indexOfLastOrder,
     );
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Commandes')),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Table(
-              border: TableBorder.all(),
-              children: [
-                TableRow(
-                  children: [
-                    TableCell(child: Text('Montant', style: TextStyle(fontWeight: FontWeight.bold))),
-                    TableCell(child: Text('Numéro', style: TextStyle(fontWeight: FontWeight.bold))),
-                    TableCell(child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                    TableCell(child: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
-                    TableCell(child: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
-                  ],
-                ),
-                for (var order in currentOrders)
+    return Directionality(
+      textDirection: textDirection,
+      child: Scaffold(
+        appBar: AppBar(title: Text(translate('orders', selectedLanguage))),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              Table(
+                border: TableBorder.all(),
+                children: [
                   TableRow(
                     children: [
-                      TableCell(child: Text(order['amount'].toString())),
-                      TableCell(child: Text(order['address'] ?? 'N/A')),
-                      TableCell(child: Text(order['date'] ?? 'N/A')),
-                      TableCell(child: Text(order['orderStatus'] ?? 'N/A')),
-                      TableCell(
-                        child: IconButton(
-                          icon: Icon(Icons.shopping_cart),
-                          onPressed: () => _fetchCartItems(userId!, order['id']),
-                        ),
-                      ),
+                      TableCell(child: Text(translate('amount', selectedLanguage), style: TextStyle(fontWeight: FontWeight.bold))),
+                      TableCell(child: Text(translate('number', selectedLanguage), style: TextStyle(fontWeight: FontWeight.bold))),
+                      TableCell(child: Text(translate('date', selectedLanguage), style: TextStyle(fontWeight: FontWeight.bold))),
+                      TableCell(child: Text(translate('status', selectedLanguage), style: TextStyle(fontWeight: FontWeight.bold))),
+                      TableCell(child: Text(translate('actions', selectedLanguage), style: TextStyle(fontWeight: FontWeight.bold))),
                     ],
                   ),
-              ],
-            ),
-            Pagination(
-              currentPage: currentPage,
-              totalPages: (orders.length / ordersPerPage).ceil(),
-              onPageChanged: _paginate,
-            ),
-          ],
+                  for (var order in currentOrders)
+                    TableRow(
+                      children: [
+                        TableCell(child: Text(order['amount'].toString())),
+                        TableCell(child: Text(order['address'] ?? 'N/A')),
+                        TableCell(child: Text(order['date'] ?? 'N/A')),
+                        TableCell(child: Text(order['orderStatus'] ?? 'N/A')),
+                        TableCell(
+                          child: IconButton(
+                            icon: Icon(Icons.shopping_cart),
+                            onPressed: () => _fetchCartItems(userId!, order['id']),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              Pagination(
+                currentPage: currentPage,
+                totalPages: (orders.length / ordersPerPage).ceil(),
+                onPageChanged: _paginate,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'cart_service.dart';
 import 'storage_service.dart';
 import 'dart:convert'; // Import needed for base64 decoding
+import 'language_provider.dart'; // Importer le fournisseur de langue
+import 'traduction.dart'; // Importer le fichier de traductions
 
 class CartPage extends StatefulWidget {
   @override
@@ -81,7 +84,7 @@ class _CartPageState extends State<CartPage> {
       await CartService().removeCartItem(cartItemId);
       _fetchCartData();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Produit a ete supprime de la cart !')),
+        SnackBar(content: Text(translate('remove_from_cart', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage))),
       );
     } catch (error) {
       print('Error removing item: $error');
@@ -94,10 +97,12 @@ class _CartPageState extends State<CartPage> {
       setState(() {
         cart = null;
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Order placed successfully')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(translate('order_placed', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage))));
     } catch (error) {
       print('Error placing order: $error');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to place order. Please try again.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(translate('order_failed', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage))));
     }
   }
 
@@ -107,84 +112,90 @@ class _CartPageState extends State<CartPage> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-            return AlertDialog(
-              title: Text('Place Order'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: phoneController,
-                      decoration: InputDecoration(labelText: 'Phone Number'),
-                    ),
-                    DropdownButton<String>(
-                      hint: Text('Select Wilaya'),
-                      value: selectedWilaya,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedWilaya = newValue;
-                          selectedMoughataa = null; // Reset the moughataa when wilaya changes
-                        });
-                      },
-                      items: wilayas.map<DropdownMenuItem<String>>((Map<String, dynamic> wilaya) {
-                        return DropdownMenuItem<String>(
-                          value: wilaya['name'],
-                          child: Text(wilaya['name']),
-                        );
-                      }).toList(),
-                    ),
-                    if (selectedWilaya != null)
+            String selectedLanguage = Provider.of<LanguageProvider>(context).selectedLanguage;
+            return Directionality(
+              textDirection: selectedLanguage == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+              child: AlertDialog(
+                title: Text(translate('place_order', selectedLanguage)),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: phoneController,
+                        decoration: InputDecoration(labelText: translate('phone_number', selectedLanguage)),
+                      ),
                       DropdownButton<String>(
-                        hint: Text('Select Moughataa'),
-                        value: selectedMoughataa,
+                        hint: Text(translate('select_wilaya', selectedLanguage)),
+                        value: selectedWilaya,
                         onChanged: (String? newValue) {
                           setState(() {
-                            selectedMoughataa = newValue;
+                            selectedWilaya = newValue;
+                            selectedMoughataa = null; // Reset the moughataa when wilaya changes
                           });
                         },
-                        items: wilayas
-                            .firstWhere((wilaya) => wilaya['name'] == selectedWilaya)['moughataas']
-                            .map<DropdownMenuItem<String>>((String moughataa) {
+                        items: wilayas.map<DropdownMenuItem<String>>((Map<String, dynamic> wilaya) {
                           return DropdownMenuItem<String>(
-                            value: moughataa,
-                            child: Text(moughataa),
+                            value: wilaya['name'],
+                            child: Text(wilaya['name']),
                           );
                         }).toList(),
                       ),
-                  ],
+                      if (selectedWilaya != null)
+                        DropdownButton<String>(
+                          hint: Text(translate('select_moughataa', selectedLanguage)),
+                          value: selectedMoughataa,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedMoughataa = newValue;
+                            });
+                          },
+                          items: wilayas
+                              .firstWhere((wilaya) => wilaya['name'] == selectedWilaya)['moughataas']
+                              .map<DropdownMenuItem<String>>((String moughataa) {
+                            return DropdownMenuItem<String>(
+                              value: moughataa,
+                              child: Text(moughataa),
+                            );
+                          }).toList(),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    if (selectedWilaya != null && selectedMoughataa != null && phoneController.text.isNotEmpty) {
-                      _placeOrder({
-                        'userId': userId!,
-                        'address': phoneController.text,
-                        'orderDescription': 'Sample Order',
-                        'wilaya': selectedMoughataa,
-                        'latitude': null,
-                        'longitude': null
-                      });
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('La commande a été passée avec succès')));
+                actions: [
+                  TextButton(
+                    onPressed: () {
                       Navigator.of(context).pop();
+                    },
+                    child: Text(translate('cancel', selectedLanguage)),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if (selectedWilaya != null && selectedMoughataa != null && phoneController.text.isNotEmpty) {
+                        _placeOrder({
+                          'userId': userId!,
+                          'address': phoneController.text,
+                          'orderDescription': 'Sample Order',
+                          'wilaya': selectedMoughataa,
+                          'latitude': null,
+                          'longitude': null
+                        });
 
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Please fill in all the fields')));
-                    }
-                  },
-                  child: Text('Place Order'),
-                ),
-              ],
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(translate('order_placed', selectedLanguage))),
+                        );
+                        Navigator.of(context).pop();
+
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(translate('fill_all_fields', selectedLanguage))),
+                        );
+                      }
+                    },
+                    child: Text(translate('place_order', selectedLanguage)),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -194,82 +205,80 @@ class _CartPageState extends State<CartPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Cart')),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, child) {
+        String selectedLanguage = languageProvider.selectedLanguage;
+        TextDirection textDirection = (selectedLanguage == 'ar') ? TextDirection.rtl : TextDirection.ltr;
 
-    if (cart == null) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Cart')),
-        body: Center(child: Text('Your cart is empty.')),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: Text('Cart')),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: cart!['cartItems'].length,
-              itemBuilder: (context, index) {
-                final item = cart!['cartItems'][index];
-                return ListTile(
-                  leading: item['returnedImg'] != null
-                      ? Image.memory(base64Decode(item['returnedImg']))
-                      : Icon(Icons.image_not_supported),
-                  title: Text(item['marque']),
-                  subtitle: Text('Price: ${item['price']}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.remove),
-                        onPressed: () {
-                          if (item['quantity'] == 1) {
-                            _removeCartItem(item['id']);
-                          } else {
-                            _updateQuantity(item['productId'], 'deduction');
-                          }
-                        },
+        return Directionality(
+          textDirection: textDirection,
+          child: Scaffold(
+            appBar: AppBar(title: Text(translate('cart', selectedLanguage))),
+            body: loading
+                ? Center(child: CircularProgressIndicator())
+                : cart == null
+                    ? Center(child: Text(translate('cart_empty', selectedLanguage)))
+                    : SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: cart!['cartItems'].length,
+                              itemBuilder: (context, index) {
+                                final item = cart!['cartItems'][index];
+                                return ListTile(
+                                  leading: item['returnedImg'] != null
+                                      ? Image.memory(base64Decode(item['returnedImg']))
+                                      : Icon(Icons.image_not_supported),
+                                  title: Text(item['marque']),
+                                  subtitle: Text('${translate('price', selectedLanguage)}: ${item['price']}'),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(Icons.remove),
+                                        onPressed: () {
+                                          if (item['quantity'] == 1) {
+                                            _removeCartItem(item['id']);
+                                          } else {
+                                            _updateQuantity(item['productId'], 'deduction');
+                                          }
+                                        },
+                                      ),
+                                      Text('${item['quantity']}'),
+                                      IconButton(
+                                        icon: Icon(Icons.add),
+                                        onPressed: () => _updateQuantity(item['productId'], 'addition'),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.delete),
+                                        onPressed: () => _removeCartItem(item['id']),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                              child: Column(
+                                children: [
+                                  Text('${translate('total_price', selectedLanguage)}: ${cart!['totalAmount']}'),
+                                  SizedBox(height: 10),
+                                  ElevatedButton(
+                                    onPressed: _showOrderDialog,
+                                    child: Text(translate('place_order', selectedLanguage)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      Text('${item['quantity']}'),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () => _updateQuantity(item['productId'], 'addition'),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () => _removeCartItem(item['id']),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-              child: Column(
-                children: [
-                  Text('Total Price: ${cart!['totalAmount']}'),
-                  SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: _showOrderDialog,
-                    child: Text('Place Order'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
-
-

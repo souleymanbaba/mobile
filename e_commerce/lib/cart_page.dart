@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'cart_service.dart';
 import 'storage_service.dart';
@@ -47,7 +48,7 @@ class _CartPageState extends State<CartPage> {
     });
     if (userId != null) {
       try {
-        final data = await CartService().fetchCartData(userId);
+        final data = await CartService().fetchCartData(userId,context);
         setState(() {
           cart = data;
           loading = false;
@@ -93,8 +94,13 @@ class _CartPageState extends State<CartPage> {
 
   Future<void> _placeOrder(Map<String, dynamic> orderData) async {
     try {
+         Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+        orderData['latitude'] = position.latitude;
+    orderData['longitude'] = position.longitude;
       await CartService().placeOrder(orderData);
-      setState(() {
+      setState(() { 
         cart = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -131,13 +137,13 @@ class _CartPageState extends State<CartPage> {
                         onChanged: (String? newValue) {
                           setState(() {
                             selectedWilaya = newValue;
-                            selectedMoughataa = null; // Reset the moughataa when wilaya changes
+                            selectedMoughataa = null; 
                           });
                         },
                         items: wilayas.map<DropdownMenuItem<String>>((Map<String, dynamic> wilaya) {
                           return DropdownMenuItem<String>(
                             value: wilaya['name'],
-                            child: Text(wilaya['name']),
+                            child: Text(translate(wilaya['name'], selectedLanguage)),
                           );
                         }).toList(),
                       ),
@@ -155,7 +161,7 @@ class _CartPageState extends State<CartPage> {
                               .map<DropdownMenuItem<String>>((String moughataa) {
                             return DropdownMenuItem<String>(
                               value: moughataa,
-                              child: Text(moughataa),
+                              child: Text(translate(moughataa, selectedLanguage)),
                             );
                           }).toList(),
                         ),
@@ -231,8 +237,14 @@ class _CartPageState extends State<CartPage> {
                                   leading: item['returnedImg'] != null
                                       ? Image.memory(base64Decode(item['returnedImg']))
                                       : Icon(Icons.image_not_supported),
-                                  title: Text(item['marque']),
-                                  subtitle: Text('${translate('price', selectedLanguage)}: ${item['price']}'),
+                                  title: Text(item['marque'],
+                                    style: TextStyle(
+                                      fontFamily: 'YourArabicFontFamily',
+                                    ),
+                                    textDirection: textDirection,
+
+                                  ),
+                                  subtitle: Text('${translate('price', selectedLanguage)}: ${item['price']} \MRU'),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [

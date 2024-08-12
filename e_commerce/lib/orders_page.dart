@@ -184,7 +184,7 @@ class _OrdersPageState extends State<OrdersPage> {
                         TableCell(child: Text(order['amount'].toString())),
                         TableCell(child: Text(order['address'] ?? 'N/A')),
                         TableCell(child: Text(order['date'] ?? 'N/A')),
-                        TableCell(child: Text(order['orderStatus'] ?? 'N/A')),
+                        TableCell(child: Text(translate(order['orderStatus'], selectedLanguage) ?? 'N/A')),
                         TableCell(
                           child: IconButton(
                             icon: Icon(Icons.shopping_cart),

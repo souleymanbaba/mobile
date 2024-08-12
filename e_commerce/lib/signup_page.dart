@@ -1,5 +1,8 @@
+import 'package:e_commerce/language_provider.dart';
+import 'package:e_commerce/traduction.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'storage_service.dart';
 
@@ -34,12 +37,12 @@ class _SignupPageState extends State<SignupPage> {
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Account created successfully!')),
+          SnackBar(content: Text(translate('account_created', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage))),
         );
         Navigator.pushReplacementNamed(context, '/login');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create account')),
+          SnackBar(content: Text(translate('failed_to_create_account', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage))),
         );
       }
     }
@@ -47,9 +50,12 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final String selectedLanguage = Provider.of<LanguageProvider>(context, listen: false).selectedLanguage;
+    final TextDirection textDirection = selectedLanguage == 'ar' ? TextDirection.rtl : TextDirection.ltr;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sign Up'),
+        title: Text(translate('sign_up', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage)),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -64,7 +70,7 @@ class _SignupPageState extends State<SignupPage> {
               ),
               SizedBox(height: 20),
               Text(
-                'Create Account',
+                translate('create_account', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage),
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -79,12 +85,14 @@ class _SignupPageState extends State<SignupPage> {
                     TextFormField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: 'Full Name',
+                        labelText: translate('full_name', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage),
                         prefixIcon: Icon(Icons.person),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30.0),
                         ),
+                        
                       ),
+                      textDirection: textDirection ,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your full name';
@@ -96,12 +104,13 @@ class _SignupPageState extends State<SignupPage> {
                     TextFormField(
                       controller: _phoneController,
                       decoration: InputDecoration(
-                        labelText: 'Phone Number',
+                        labelText: translate('phone_number', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage),
                         prefixIcon: Icon(Icons.phone),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30.0),
                         ),
                       ),
+                      textDirection: textDirection ,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your phone number';
@@ -116,13 +125,14 @@ class _SignupPageState extends State<SignupPage> {
                     TextFormField(
                       controller: _passwordController,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: translate('password', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage),
                         prefixIcon: Icon(Icons.lock),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30.0),
                         ),
                       ),
                       obscureText: true,
+                      textDirection: textDirection ,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your password';
@@ -133,12 +143,14 @@ class _SignupPageState extends State<SignupPage> {
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _signup,
-                      child: Text('Create Account'),
+                      child: Text(translate('create_account', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage)),
                       style: ElevatedButton.styleFrom(
+                          
                         padding: EdgeInsets.symmetric(
                           horizontal: 50,
                           vertical: 15,
                         ),
+                      
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30.0),
                         ),
@@ -149,7 +161,7 @@ class _SignupPageState extends State<SignupPage> {
                       onPressed: () {
                         Navigator.pushReplacementNamed(context, '/login');
                       },
-                      child: Text('Already have an account? Login'),
+                      child: Text(translate('already_have_account', Provider.of<LanguageProvider>(context, listen: false).selectedLanguage)),
                     ),
                   ],
                 ),

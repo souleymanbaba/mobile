@@ -1,5 +1,8 @@
 import 'dart:convert'; // Ajoutez cet import
 import 'dart:typed_data';
+import 'traduction.dart';
+import 'language_provider.dart';
+import 'package:provider/provider.dart';
 
 class Product {
   final int? id;
@@ -36,6 +39,7 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
+
       id: json['id'] != null ? json['id'] as int : null,
       name: json['name'] as String?,
       price: json['price'] != null ? json['price'].toDouble() : null,

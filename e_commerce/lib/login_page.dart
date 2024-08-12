@@ -1,7 +1,10 @@
 
 
+import 'package:e_commerce/language_provider.dart';
+import 'package:e_commerce/traduction.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'storage_service.dart';
 
@@ -15,7 +18,6 @@ final _formKey = GlobalKey<FormState>();
 final TextEditingController _phoneController = TextEditingController();
 final TextEditingController _passwordController = TextEditingController();
 final StorageService _storageService = StorageService();
-
 Future<void> _login() async {
 if (_formKey.currentState!.validate()) {
 final String phone = _phoneController.text;
@@ -31,6 +33,7 @@ body: jsonEncode(<String, String>{
 'password': password,
 }),
 );
+
 
 if (response.statusCode == 200) {
 final responseData = jsonDecode(response.body);
@@ -65,7 +68,7 @@ color: Colors.blue,
 ),
 SizedBox(height: 20),
 Text(
-'Welcome Back!',
+translate("welcome_back", Provider.of<LanguageProvider>(context, listen: false).selectedLanguage),
 style: TextStyle(
 fontSize: 24,
 fontWeight: FontWeight.bold,
@@ -74,7 +77,7 @@ color: Colors.blue,
 ),
 SizedBox(height: 10),
 Text(
-'Login to continue',
+translate("login_to_continue", Provider.of<LanguageProvider>(context, listen: false).selectedLanguage),
 style: TextStyle(
 fontSize: 16,
 color: Colors.grey,
@@ -88,7 +91,7 @@ children: [
 TextFormField(
 controller: _phoneController,
 decoration: InputDecoration(
-labelText: 'Phone Number',
+labelText: translate("phone_number", Provider.of<LanguageProvider>(context, listen: false).selectedLanguage),
 prefixIcon: Icon(Icons.phone),
 border: OutlineInputBorder(
 borderRadius: BorderRadius.circular(30.0),
@@ -108,7 +111,7 @@ SizedBox(height: 20),
 TextFormField(
 controller: _passwordController,
 decoration: InputDecoration(
-labelText: 'Password',
+labelText: translate("password", Provider.of<LanguageProvider>(context, listen: false).selectedLanguage),
 prefixIcon: Icon(Icons.lock),
 border: OutlineInputBorder(
 borderRadius: BorderRadius.circular(30.0),
@@ -125,7 +128,7 @@ return null;
 SizedBox(height: 20),
 ElevatedButton(
 onPressed: _login,
-child: Text('Login'),
+child: Text(translate("login", Provider.of<LanguageProvider>(context, listen: false).selectedLanguage)),
 style: ElevatedButton.styleFrom(
 padding: EdgeInsets.symmetric(
 horizontal: 50,
@@ -141,7 +144,7 @@ TextButton(
 onPressed: () {
 Navigator.pushReplacementNamed(context, '/signup');
 },
-child: Text('Don\'t have an account? Sign up'),
+child: Text(translate("dont_have_account", Provider.of<LanguageProvider>(context, listen: false).selectedLanguage)),
 ),
 ],
 ),

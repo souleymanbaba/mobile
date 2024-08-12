@@ -31,7 +31,7 @@ class _WishlistPageState extends State<WishlistPage> {
     });
     if (userId != null) {
       try {
-        final data = await ProductService().fetchWishlist(userId);
+        final data = await ProductService().fetchWishlist(userId,context);
         setState(() {
           wishlist = data;
           loading = false;
@@ -143,8 +143,12 @@ class _WishlistPageState extends State<WishlistPage> {
                     leading: item.returnedImg != null && item.returnedImg!.isNotEmpty
                         ? Image.memory(item.returnedImg!)
                         : Icon(Icons.image_not_supported),
-                    title: Text(item.productName ?? ''),
-                    subtitle: Text('${translate('price', selectedLanguage)}: ${item.price?.toStringAsFixed(2) ?? ''} \$'),
+                    title: Text(item.productName ?? '' ,
+                      style: TextStyle(
+                        fontFamily: 'YourArabicFontFamily',
+                      ),
+                      textDirection: textDirection,),
+                    subtitle: Text('${translate('price', selectedLanguage)}: ${item.price?.toStringAsFixed(2) ?? ''} \MRU'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

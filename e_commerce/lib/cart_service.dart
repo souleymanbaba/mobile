@@ -1,13 +1,19 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+
+import 'language_provider.dart';
 
 class CartService {
   static const String baseUrl = 'http://192.168.100.165:8080/api/customer';
 
-  Future<Map<String, dynamic>> fetchCartData(int userId) async {
-    final response = await http.get(Uri.parse('$baseUrl/cart/$userId'));
+  Future<Map<String, dynamic>> fetchCartData(int userId,BuildContext context) async {
+    String selectedLanguage = Provider.of<LanguageProvider>(context, listen: false).selectedLanguage;
+
+    final response = await http.get(Uri.parse('$baseUrl/cart/$userId?lang=$selectedLanguage'));
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('Failed to load cart data');
     }

@@ -7,6 +7,7 @@ import 'product_service.dart';
 import 'storage_service.dart';
 import 'language_provider.dart';
 import 'traduction.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Pour stocker la langue sélectionnée
 
 class ProductList extends StatefulWidget {
   @override
@@ -36,8 +37,22 @@ class _ProductListState extends State<ProductList> {
   @override
   void initState() {
     super.initState();
+    _loadSelectedLanguage();
     futureProducts = _loadProducts();
     _initialLoad();
+  }
+
+  Future<void> _loadSelectedLanguage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedLanguage = prefs.getString('selectedLanguage');
+    if (selectedLanguage != null) {
+      Provider.of<LanguageProvider>(context, listen: false).setLanguage(selectedLanguage);
+    }
+  }
+
+  Future<void> _saveSelectedLanguage(String language) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selectedLanguage', language);
   }
 
   Future<void> _initialLoad() async {
@@ -55,7 +70,7 @@ class _ProductListState extends State<ProductList> {
   }
 
   Future<List<Product>> _loadProducts() async {
-    final products = await ProductService().fetchProducts();
+    final products = await ProductService().fetchProducts(context);
     setState(() {
       allProducts = products;
       filteredProducts = products;
@@ -65,10 +80,10 @@ class _ProductListState extends State<ProductList> {
   }
 
   Future<void> _loadCategories() async {
-    final response = await http.get(Uri.parse('http://192.168.100.165:8080/api/admin/categories'));
+    String selectedLanguage = Provider.of<LanguageProvider>(context, listen: false).selectedLanguage;
+    final response = await http.get(Uri.parse('http://192.168.100.165:8080/api/admin/categories?lang=$selectedLanguage'));
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      String selectedLanguage = Provider.of<LanguageProvider>(context, listen: false).selectedLanguage;
+      final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
       setState(() {
         categories = [{'id': null, 'name': translate('all', selectedLanguage)}]
           ..addAll(data.map((item) => {'id': item['id'], 'name': translate(item['name'], selectedLanguage)}).toList());
@@ -77,10 +92,10 @@ class _ProductListState extends State<ProductList> {
   }
 
   Future<void> _loadSubCategories(int categoryId) async {
-    final response = await http.get(Uri.parse('http://192.168.100.165:8080/api/admin/$categoryId/subcategories'));
+    String selectedLanguage = Provider.of<LanguageProvider>(context, listen: false).selectedLanguage;
+    final response = await http.get(Uri.parse('http://192.168.100.165:8080/api/admin/$categoryId/subcategories?lang=$selectedLanguage'));
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      String selectedLanguage = Provider.of<LanguageProvider>(context, listen: false).selectedLanguage;
+      final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
       setState(() {
         subCategories = [{'id': null, 'name': translate('all', selectedLanguage)}]
           ..addAll(data.map((item) => {'id': item['id'], 'name': translate(item['name'], selectedLanguage)}).toList());
@@ -89,9 +104,10 @@ class _ProductListState extends State<ProductList> {
   }
 
   Future<void> _loadProductsByCategory(int categoryId) async {
-    final response = await http.get(Uri.parse('http://192.168.100.165:8080/api/admin/category/$categoryId'));
+    String selectedLanguage = Provider.of<LanguageProvider>(context, listen: false).selectedLanguage;
+    final response = await http.get(Uri.parse('http://192.168.100.165:8080/api/admin/category/$categoryId?lang=$selectedLanguage'));
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+      final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
       final products = data.map((item) => Product.fromJson(item)).toList();
       setState(() {
         allProducts = products;
@@ -132,11 +148,11 @@ class _ProductListState extends State<ProductList> {
       final response = await http.get(
         Uri.parse('http://192.168.100.165:8080/api/customer/cart/$userId'),
         headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
+          'Content-Type': 'application/json;',
         },
       );
       if (response.statusCode == 200) {
-        final Map<String, dynamic> cartData = jsonDecode(response.body);
+        final Map<String, dynamic> cartData = jsonDecode(utf8.decode(response.bodyBytes));
         final List<dynamic> items = cartData['cartItems'];
         final Map<int, int> cartItems = {};
         for (var item in items) {
@@ -159,11 +175,11 @@ class _ProductListState extends State<ProductList> {
       final response = await http.get(
         Uri.parse('http://192.168.100.165:8080/api/customer/wishlist/$userId'),
         headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
+          'Content-Type': 'application/json; ',
         },
       );
       if (response.statusCode == 200) {
-        final List<dynamic> wishlistData = jsonDecode(response.body);
+        final List<dynamic> wishlistData = jsonDecode(utf8.decode(response.bodyBytes));
         setState(() {
           wishlistItems = wishlistData.map((item) => item['productId'] as int).toSet();
           wishlistCount = wishlistData.length;
@@ -181,13 +197,19 @@ class _ProductListState extends State<ProductList> {
       final response = await http.post(
         Uri.parse('http://192.168.100.165:8080/api/customer/addition'),
         headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
+          'Content-Type': 'application/json ',
         },
         body: jsonEncode(<String, int>{
           'productId': productId,
           'userId': userId,
         }),
       );
+
+      print("_________________________________________________________________________________________________________________");
+print(productId);
+print(userId);
+      print("_________________________________________________________________________________________________________________");
+
       if (response.statusCode == 201) {
         setState(() {
           cartItems[productId] = (cartItems[productId] ?? 0) + 1;
@@ -336,12 +358,11 @@ class _ProductListState extends State<ProductList> {
       final response = await http.delete(
         Uri.parse('http://192.168.100.165:8080/api/customer/removee/$productId/$userId'),
         headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
+          'Content-Type': 'application/json; ',
         },
       );
 
       if (response.statusCode == 200) {
-
         await _loadCartItems(); // Recharger toutes les données après la suppression des favoris
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Produit supprimé des Cart!')),
@@ -423,11 +444,13 @@ class _ProductListState extends State<ProductList> {
                     },
                   ),
                 PopupMenuButton<String>(
-                  onSelected: (String languageCode) {
+                  onSelected: (String languageCode) async {
                     languageProvider.setLanguage(languageCode);
-                    _loadCategories(); // Recharger les catégories avec la nouvelle langue
+                    await _saveSelectedLanguage(languageCode);
+                    await _loadCategories();
+                    await _loadProducts();// Recharger les catégories avec la nouvelle langue
                     if (selectedCategoryId != null) {
-                      _loadSubCategories(selectedCategoryId!); // Recharger les sous-catégories avec la nouvelle langue
+                      await _loadSubCategories(selectedCategoryId!); // Recharger les sous-catégories avec la nouvelle langue
                     }
                   },
                   itemBuilder: (BuildContext context) {
@@ -492,7 +515,13 @@ class _ProductListState extends State<ProductList> {
                           items: categories.map((category) {
                             return DropdownMenuItem<int?>(
                               value: category['id'] as int?,
-                              child: Text(category['name']),
+                              child: Text(
+                                category['name'],
+                                style: TextStyle(
+                                  fontFamily: 'YourArabicFontFamily',
+                                ),
+                                textDirection: textDirection,
+                              ),
                             );
                           }).toList(),
                         ),
@@ -516,7 +545,13 @@ class _ProductListState extends State<ProductList> {
                             items: subCategories.map((subCategory) {
                               return DropdownMenuItem<int?>(
                                 value: subCategory['id'] as int?,
-                                child: Text(subCategory['name']),
+                                child: Text(
+                                  subCategory['name'],
+                                  style: TextStyle(
+                                    fontFamily: 'YourArabicFontFamily',
+                                  ),
+                                  textDirection: textDirection,
+                                ),
                               );
                             }).toList(),
                           ),
@@ -542,7 +577,13 @@ class _ProductListState extends State<ProductList> {
                           items: [translate('all', selectedLanguage), ...brands].map((String brand) {
                             return DropdownMenuItem<String>(
                               value: brand,
-                              child: Text(brand),
+                              child: Text(
+                                brand,
+                                style: TextStyle(
+                                  fontFamily: 'YourArabicFontFamily',
+                                ),
+                                textDirection: textDirection,
+                              ),
                             );
                           }).toList(),
                         ),
@@ -562,7 +603,13 @@ class _ProductListState extends State<ProductList> {
                           items: [translate('all', selectedLanguage), ...sizes].map((String size) {
                             return DropdownMenuItem<String>(
                               value: size,
-                              child: Text(size),
+                              child: Text(
+                                size,
+                                style: TextStyle(
+                                  fontFamily: 'YourArabicFontFamily',
+                                ),
+                                textDirection: textDirection,
+                              ),
                             );
                           }).toList(),
                         ),
@@ -617,9 +664,9 @@ class _ProductListState extends State<ProductList> {
                                   Expanded(
                                     child: product.imageBytes != null && product.imageBytes!.isNotEmpty
                                         ? Image.memory(
-                                            product.imageBytes!,
-                                            fit: BoxFit.cover,
-                                          )
+                                      product.imageBytes!,
+                                      fit: BoxFit.cover,
+                                    )
                                         : Placeholder(),
                                   ),
                                   Padding(
@@ -632,7 +679,9 @@ class _ProductListState extends State<ProductList> {
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
+                                            fontFamily: 'YourArabicFontFamily',
                                           ),
+                                          textDirection: textDirection,
                                         ),
                                         IconButton(
                                           icon: Icon(
@@ -652,33 +701,41 @@ class _ProductListState extends State<ProductList> {
                                   Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                                     child: Text(
-                                      '${product.price?.toStringAsFixed(2) ?? ''} \$',
+                                      '${product.price?.toStringAsFixed(2) ?? ''} \MRU',
                                       style: TextStyle(
                                         color: Colors.grey[600],
+                                        fontFamily: 'YourArabicFontFamily',
                                       ),
+                                      textDirection: textDirection,
                                     ),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: cartItems.containsKey(product.id)
                                         ? Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              IconButton(
-                                                icon: Icon(Icons.remove),
-                                                onPressed: () => _decreaseQuantity(product.id!),
-                                              ),
-                                              Text('${cartItems[product.id]}'),
-                                              IconButton(
-                                                icon: Icon(Icons.add),
-                                                onPressed: () => _increaseQuantity(product.id!),
-                                              ),
-                                            ],
-                                          )
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(Icons.remove),
+                                          onPressed: () {
+                                            if (cartItems[product.id] == 1) {
+                                              _removeFromCarttt(product.id!);
+                                            } else {
+                                              _decreaseQuantity(product.id!);
+                                            }
+                                          },
+                                        ),
+                                        Text('${cartItems[product.id]}'),
+                                        IconButton(
+                                          icon: Icon(Icons.add),
+                                          onPressed: () => _increaseQuantity(product.id!),
+                                        ),
+                                      ],
+                                    )
                                         : ElevatedButton(
-                                            onPressed: () => _addToCart(product.id!),
-                                            child: Icon(Icons.add_shopping_cart),
-                                          ),
+                                      onPressed: () => _addToCart(product.id!),
+                                      child: Icon(Icons.add_shopping_cart),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -693,114 +750,83 @@ class _ProductListState extends State<ProductList> {
             ),
             bottomNavigationBar: isLoggedIn
                 ? BottomAppBar(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Stack(
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.shopping_cart),
-                              onPressed: () async {
-                                await Navigator.pushNamed(context, '/cart');
-                                await _initialLoad();
-                              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.shopping_cart),
+                        onPressed: () async {
+                          await Navigator.pushNamed(context, '/cart');
+                          await _initialLoad();
+                        },
+                      ),
+                      if (cartCount > 0)
+                        Positioned(
+                          right: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(1),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            if (cartCount > 0)
-                              Positioned(
-                                right: 0,
-                                child: Container(
-                                  padding: EdgeInsets.all(1),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  constraints: BoxConstraints(
-                                    minWidth: 12,
-                                    minHeight: 12,
-                                  ),
-                                  child: Text(
-                                    '$cartCount',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 8,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
+                            constraints: BoxConstraints(
+                              minWidth: 12,
+                              minHeight: 12,
+                            ),
+                            child: Text(
+                              '$cartCount',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
                               ),
+                              textAlign: TextAlign.center,
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                                  ? Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.remove),
-                                    onPressed: () {
-                                      if (cartItems[product.id]==1) {
-                                        _removeFromCarttt(product.id!);
-                                        print("ce bon _____________________________________________________________________________________________________________________");
-                                      } else {
-                                        _decreaseQuantity(product.id!);
-                                      }
-                                    },
-                                  ),
-                                  Text('${cartItems[product.id]}'),
-                                  IconButton(
-                                    icon: Icon(Icons.add),
-                                    onPressed: () => _increaseQuantity(product.id!),
-                                  ),
-                                ],
-                              )
-                                  : ElevatedButton(
-                                onPressed: () => _addToCart(product.id!),
-                                child: Icon(Icons.add_shopping_cart),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                            IconButton(
-                              icon: Icon(Icons.favorite_border),
-                              onPressed: () async {
-                                await Navigator.pushNamed(context, '/wishlist');
-                                await _initialLoad();
-                              },
-                            ),
-                            if (wishlistCount > 0)
-                              Positioned(
-                                right: 0,
-                                child: Container(
-                                  padding: EdgeInsets.all(1),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  constraints: BoxConstraints(
-                                    minWidth: 12,
-                                    minHeight: 12,
-                                  ),
-                                  child: Text(
-                                    '$wishlistCount',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 8,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                          ],
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.favorite_border),
+                    onPressed: () async {
+                      await Navigator.pushNamed(context, '/wishlist');
+                      await _initialLoad();
+                    },
+                  ),
+                  if (wishlistCount > 0)
+                    Positioned(
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(1),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.receipt),
-                          onPressed: () async {
-                            await Navigator.pushNamed(context, '/orders');
-                            await _initialLoad();
-                          },
+                        constraints: BoxConstraints(
+                          minWidth: 12,
+                          minHeight: 12,
                         ),
-                      ],
+                        child: Text(
+                          '$wishlistCount',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
-                  )
+                  IconButton(
+                    icon: Icon(Icons.receipt),
+                    onPressed: () async {
+                      await Navigator.pushNamed(context, '/orders');
+                      await _initialLoad();
+                    },
+                  ),
+                ],
+              ),
+            )
                 : null,
           ),
         );
